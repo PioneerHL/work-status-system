@@ -1,93 +1,56 @@
 // 全局变量
-let socket;
 let users = {};
 let statusData = {};
 
 // 页面加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
-    // 加载用户数据
-    loadUsers();
+    // 加载默认用户数据
+    loadDefaultUsers();
     
     // 加载初始状态
     loadInitialStatus();
     
-    // 初始化WebSocket连接
-    initWebSocket();
-    
     // 设置事件监听器
     setupEventListeners();
-    
-    // 启动心跳机制
-    startHeartbeat();
 });
 
-// 加载用户数据
-function loadUsers() {
-    fetch('/api/users')
-        .then(response => response.json())
-        .then(data => {
-            users = data;
-            populateUserSelect();
-            renderStatusGrid();
-        })
-        .catch(error => {
-            console.error('加载用户数据失败:', error);
-            // 使用默认用户数据
-            users = {
-                "user1": {"name": "陈浩林", "department": "技术部"},
-                "user2": {"name": "季浩洋", "department": "技术部"},
-                "user3": {"name": "张彬", "department": "产品部"},
-                "user4": {"name": "马宁", "department": "设计部"},
-                "user5": {"name": "崔立军", "department": "市场部"},
-                "user6": {"name": "谢尚鑫", "department": "运营部"},
-                "user7": {"name": "贾明洋", "department": "技术部"},
-                "user8": {"name": "赵雨珊", "department": "设计部"}
-            };
-            populateUserSelect();
-            renderStatusGrid();
-        });
+// 加载默认用户数据
+function loadDefaultUsers() {
+    users = {
+        "user1": {"name": "陈浩林", "department": "技术部"},
+        "user2": {"name": "季浩洋", "department": "技术部"},
+        "user3": {"name": "张彬", "department": "产品部"},
+        "user4": {"name": "马宁", "department": "设计部"},
+        "user5": {"name": "崔立军", "department": "市场部"},
+        "user6": {"name": "谢尚鑫", "department": "运营部"},
+        "user7": {"name": "贾明洋", "department": "技术部"},
+        "user8": {"name": "赵雨珊", "department": "设计部"}
+    };
+    populateUserSelect();
+    renderStatusGrid();
 }
 
 // 加载初始状态
 function loadInitialStatus() {
-    fetch('/api/status')
-        .then(response => response.json())
-        .then(data => {
-            statusData = data;
-            renderStatusGrid();
-            updateLastUpdate();
-        })
-        .catch(error => {
-            console.error('加载初始状态失败:', error);
-        });
-}
-
-// 初始化WebSocket连接
-function initWebSocket() {
-    // 连接到SocketIO服务器
-    socket = io();
-    
-    // 连接事件
-    socket.on('connect', function() {
-        console.log('已连接到服务器');
-    });
-    
-    // 断开连接事件
-    socket.on('disconnect', function() {
-        console.log('与服务器断开连接');
-    });
-    
-    // 状态更新事件
-    socket.on('status_update', function(data) {
-        statusData = data;
-        renderStatusGrid();
-        updateLastUpdate();
-    });
-    
-    // 连接错误事件
-    socket.on('connect_error', function(error) {
-        console.error('WebSocket连接错误:', error);
-    });
+    // 从localStorage加载状态数据，如果没有则使用默认值
+    const savedStatus = localStorage.getItem('workStatusData');
+    if (savedStatus) {
+        statusData = JSON.parse(savedStatus);
+    } else {
+        // 初始化默认状态
+        statusData = {};
+        for (const user_id in users) {
+            statusData[user_id] = {
+                status: 'online',
+                message: '',
+                timestamp: new Date().toISOString()
+            };
+        }
+        // 保存到localStorage
+        localStorage.setItem('workStatusData', JSON.stringify(statusData));
+    }
+    renderStatusGrid();
+    updateLastUpdate();
 }
 
 // 设置事件监听器
@@ -122,12 +85,19 @@ function updateStatus() {
         return;
     }
     
-    // 发送状态更新
-    socket.emit('update_status', {
-        user_id: user_id,
+    // 更新本地状态数据
+    statusData[user_id] = {
         status: status,
-        message: message
-    });
+        message: message,
+        timestamp: new Date().toISOString()
+    };
+    
+    // 保存到localStorage
+    localStorage.setItem('workStatusData', JSON.stringify(statusData));
+    
+    // 更新UI
+    renderStatusGrid();
+    updateLastUpdate();
     
     // 清空消息输入框
     statusMessage.value = '';
@@ -236,18 +206,11 @@ function getDefaultMessage(status) {
     return messageMap[status] || '';
 }
 
-// 启动心跳机制
-function startHeartbeat() {
+// 启动状态自动保存机制
+function startAutoSave() {
     setInterval(function() {
-        const userSelect = document.getElementById('user-select');
-        const selectedUserId = userSelect.value;
-        
-        if (selectedUserId && socket && socket.connected) {
-            socket.emit('heartbeat', {
-                user_id: selectedUserId
-            });
-        }
-    }, 30000); // 每30秒发送一次心跳
+        localStorage.setItem('workStatusData', JSON.stringify(statusData));
+    }, 30000); // 每30秒自动保存一次
 }
 
 // 更新最后更新时间
