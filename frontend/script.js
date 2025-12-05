@@ -20,14 +20,14 @@ document.addEventListener('DOMContentLoaded', function() {
 // 加载默认用户数据
 function loadDefaultUsers() {
     users = {
-        "user1": {"name": "陈浩林", "department": "技术部"},
-        "user2": {"name": "季浩洋", "department": "技术部"},
-        "user3": {"name": "张彬", "department": "产品部"},
-        "user4": {"name": "马宁", "department": "设计部"},
-        "user5": {"name": "崔立军", "department": "市场部"},
-        "user6": {"name": "谢尚鑫", "department": "运营部"},
-        "user7": {"name": "贾明洋", "department": "技术部"},
-        "user8": {"name": "赵雨珊", "department": "设计部"}
+        "user1": {"name": "陈浩林", "department": "老师"},
+        "user2": {"name": "季浩洋", "department": "研二"},
+        "user3": {"name": "张彬", "department": "研二"},
+        "user4": {"name": "马宁", "department": "研二"},
+        "user5": {"name": "崔立军", "department": "研一"},
+        "user6": {"name": "谢尚鑫", "department": "研一"},
+        "user7": {"name": "贾明洋", "department": "研一"},
+        "user8": {"name": "赵雨珊", "department": "研一"}
     };
     populateUserSelect();
     renderStatusGrid();
@@ -191,10 +191,7 @@ function createStatusCard(user_id, user_info, status) {
 function getStatusText(status) {
     const statusMap = {
         'online': '在线',
-        'busy': '忙碌',
-        'away': '离开',
         'offline': '离线',
-        'lunch': '午餐',
         'meeting': '会议中'
     };
     return statusMap[status] || status;
