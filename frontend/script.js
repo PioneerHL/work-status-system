@@ -235,10 +235,7 @@ function createStatusCard(user_id, user_info, status) {
 function getStatusText(status) {
     const statusMap = {
         'online': '在线',
-        'busy': '忙碌',
-        'away': '离开',
         'offline': '离线',
-        'lunch': '午餐',
         'meeting': '会议中'
     };
     return statusMap[status] || status;
