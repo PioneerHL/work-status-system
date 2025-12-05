@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 设置事件监听器
     setupEventListeners();
+    
+    // 启动自动刷新机制，每2秒刷新一次
+    startAutoRefresh();
 });
 
 // 加载默认用户数据
@@ -85,6 +88,8 @@ function updateStatus() {
         return;
     }
     
+    console.log('更新状态:', user_id, status, message);
+    
     // 更新本地状态数据
     statusData[user_id] = {
         status: status,
@@ -95,9 +100,11 @@ function updateStatus() {
     // 保存到localStorage
     localStorage.setItem('workStatusData', JSON.stringify(statusData));
     
-    // 更新UI
+    // 强制更新UI
+    console.log('更新前状态数据:', statusData);
     renderStatusGrid();
     updateLastUpdate();
+    console.log('更新后UI已刷新');
     
     // 清空消息输入框
     statusMessage.value = '';
@@ -206,11 +213,17 @@ function getDefaultMessage(status) {
     return messageMap[status] || '';
 }
 
-// 启动状态自动保存机制
-function startAutoSave() {
+// 启动自动刷新机制
+function startAutoRefresh() {
     setInterval(function() {
-        localStorage.setItem('workStatusData', JSON.stringify(statusData));
-    }, 30000); // 每30秒自动保存一次
+        // 从localStorage重新加载状态数据
+        const savedStatus = localStorage.getItem('workStatusData');
+        if (savedStatus) {
+            statusData = JSON.parse(savedStatus);
+            renderStatusGrid();
+            updateLastUpdate();
+        }
+    }, 2000); // 每2秒自动刷新一次
 }
 
 // 更新最后更新时间
