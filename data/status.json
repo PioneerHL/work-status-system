@@ -1,13 +1,13 @@
 {
   "user1": {
-    "status": "online",
+    "status": "away",
     "message": "",
-    "timestamp": "2025-12-05T17:04:21.826347"
+    "timestamp": "2025-12-05T18:34:10.292633"
   },
   "user2": {
-    "status": "online",
+    "status": "busy",
     "message": "",
-    "timestamp": "2025-12-05T17:04:30.418271"
+    "timestamp": "2025-12-05T17:54:34.291965"
   },
   "user3": {
     "status": "online",
@@ -18,5 +18,10 @@
     "status": "online",
     "message": "",
     "timestamp": "2025-12-05T17:04:42.762370"
+  },
+  "system": {
+    "status": "online",
+    "message": "在线",
+    "timestamp": "2025-12-05T18:34:46.188492"
   }
 }

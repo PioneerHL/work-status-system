@@ -1,11 +1,18 @@
 // 全局变量
 let users = {};
 let statusData = {};
+let socket;
 
 // 页面加载完成后执行
 document.addEventListener('DOMContentLoaded', function() {
-    // 加载默认用户数据
-    loadDefaultUsers();
+    // 初始化Socket.IO连接
+    socket = io();
+    
+    // 设置Socket.IO事件监听器
+    setupSocketListeners();
+    
+    // 加载用户数据
+    loadUsers();
     
     // 加载初始状态
     loadInitialStatus();
@@ -15,19 +22,64 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 启动自动刷新机制，每2秒刷新一次
     startAutoRefresh();
+    
+    // 启动心跳机制
+    startHeartbeat();
 });
 
-// 加载默认用户数据
+// 设置Socket.IO事件监听器
+function setupSocketListeners() {
+    // 连接成功
+    socket.on('connect', function() {
+        console.log('已连接到服务器');
+        showNotification('已连接到服务器，实时更新已启用', 'success');
+    });
+    
+    // 断开连接
+    socket.on('disconnect', function() {
+        console.log('与服务器断开连接');
+        showNotification('与服务器断开连接，将使用轮询模式', 'warning');
+    });
+    
+    // 状态更新
+    socket.on('status_update', function(data) {
+        console.log('收到状态更新:', data);
+        // 只在数据发生变化时才重新渲染，提高性能
+        if (JSON.stringify(statusData) !== JSON.stringify(data)) {
+            statusData = data;
+            renderStatusGrid();
+            updateLastUpdate();
+        }
+    });
+}
+
+// 从后端API加载用户数据
+function loadUsers() {
+    fetch('/api/users')
+        .then(response => response.json())
+        .then(data => {
+            users = data;
+            populateUserSelect();
+            renderStatusGrid();
+        })
+        .catch(error => {
+            console.error('加载用户数据失败:', error);
+            // 失败时使用默认用户数据
+            loadDefaultUsers();
+        });
+}
+
+// 加载默认用户数据（API失败时使用）
 function loadDefaultUsers() {
     users = {
-        "user1": {"name": "陈浩林", "department": "技术部"},
-        "user2": {"name": "季浩洋", "department": "技术部"},
-        "user3": {"name": "张彬", "department": "产品部"},
-        "user4": {"name": "马宁", "department": "设计部"},
-        "user5": {"name": "崔立军", "department": "市场部"},
-        "user6": {"name": "谢尚鑫", "department": "运营部"},
-        "user7": {"name": "贾明洋", "department": "技术部"},
-        "user8": {"name": "赵雨珊", "department": "设计部"}
+        "user1": {"name": "陈浩林", "department": "老师"},
+        "user2": {"name": "季浩洋", "department": "研二"},
+        "user3": {"name": "张彬", "department": "研二"},
+        "user4": {"name": "马宁", "department": "研二"},
+        "user5": {"name": "崔立军", "department": "研一"},
+        "user6": {"name": "谢尚鑫", "department": "研一"},
+        "user7": {"name": "贾明洋", "department": "研一"},
+        "user8": {"name": "赵雨珊", "department": "研一"}
     };
     populateUserSelect();
     renderStatusGrid();
@@ -35,25 +87,26 @@ function loadDefaultUsers() {
 
 // 加载初始状态
 function loadInitialStatus() {
-    // 从localStorage加载状态数据，如果没有则使用默认值
-    const savedStatus = localStorage.getItem('workStatusData');
-    if (savedStatus) {
-        statusData = JSON.parse(savedStatus);
-    } else {
-        // 初始化默认状态
-        statusData = {};
-        for (const user_id in users) {
-            statusData[user_id] = {
-                status: 'online',
-                message: '',
-                timestamp: new Date().toISOString()
-            };
-        }
-        // 保存到localStorage
-        localStorage.setItem('workStatusData', JSON.stringify(statusData));
-    }
-    renderStatusGrid();
-    updateLastUpdate();
+    // 从后端API加载状态数据
+    fetch('/api/status')
+        .then(response => response.json())
+        .then(data => {
+            statusData = data;
+            renderStatusGrid();
+            updateLastUpdate();
+        })
+        .catch(error => {
+            console.error('加载状态数据失败:', error);
+            // 初始化默认状态
+            statusData = {};
+            for (const user_id in users) {
+                statusData[user_id] = {
+                    status: 'online',
+                    message: '',
+                    timestamp: new Date().toISOString()
+                };
+            }
+        });
 }
 
 // 设置事件监听器
@@ -90,21 +143,12 @@ function updateStatus() {
     
     console.log('更新状态:', user_id, status, message);
     
-    // 更新本地状态数据
-    statusData[user_id] = {
+    // 通过Socket.IO发送状态更新
+    socket.emit('update_status', {
+        user_id: user_id,
         status: status,
-        message: message,
-        timestamp: new Date().toISOString()
-    };
-    
-    // 保存到localStorage
-    localStorage.setItem('workStatusData', JSON.stringify(statusData));
-    
-    // 强制更新UI
-    console.log('更新前状态数据:', statusData);
-    renderStatusGrid();
-    updateLastUpdate();
-    console.log('更新后UI已刷新');
+        message: message
+    });
     
     // 清空消息输入框
     statusMessage.value = '';
@@ -216,14 +260,28 @@ function getDefaultMessage(status) {
 // 启动自动刷新机制
 function startAutoRefresh() {
     setInterval(function() {
-        // 从localStorage重新加载状态数据
-        const savedStatus = localStorage.getItem('workStatusData');
-        if (savedStatus) {
-            statusData = JSON.parse(savedStatus);
-            renderStatusGrid();
-            updateLastUpdate();
-        }
-    }, 2000); // 每2秒自动刷新一次
+        // 从后端API重新加载状态数据
+        fetch('/api/status')
+            .then(response => response.json())
+            .then(data => {
+                statusData = data;
+                renderStatusGrid();
+                updateLastUpdate();
+            })
+            .catch(error => {
+                console.error('自动刷新状态失败:', error);
+            });
+    }, 1000); // 每1秒自动刷新一次，提高实时性
+}
+
+// 启动心跳机制
+function startHeartbeat() {
+    setInterval(function() {
+        // 发送心跳
+        socket.emit('heartbeat', {
+            user_id: 'system'
+        });
+    }, 30000); // 每30秒发送一次心跳
 }
 
 // 更新最后更新时间
