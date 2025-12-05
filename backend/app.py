@@ -29,10 +29,14 @@ def load_users():
         with open(USERS_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
     return {
-        "user1": {"name": "张三", "department": "技术部"},
-        "user2": {"name": "李四", "department": "产品部"},
-        "user3": {"name": "王五", "department": "设计部"},
-        "user4": {"name": "赵六", "department": "市场部"}
+        "user1": {"name": "陈浩林", "department": "技术部"},
+        "user2": {"name": "季浩洋", "department": "技术部"},
+        "user3": {"name": "张彬", "department": "产品部"},
+        "user4": {"name": "马宁", "department": "设计部"},
+        "user5": {"name": "崔立军", "department": "市场部"},
+        "user6": {"name": "谢尚鑫", "department": "运营部"},
+        "user7": {"name": "贾明洋", "department": "技术部"},
+        "user8": {"name": "赵雨珊", "department": "设计部"}
     }
 
 # 保存用户数据
