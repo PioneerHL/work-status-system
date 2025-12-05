@@ -1,0 +1,22 @@
+{
+  "user1": {
+    "status": "online",
+    "message": "",
+    "timestamp": "2025-12-05T17:04:21.826347"
+  },
+  "user2": {
+    "status": "online",
+    "message": "",
+    "timestamp": "2025-12-05T17:04:30.418271"
+  },
+  "user3": {
+    "status": "online",
+    "message": "",
+    "timestamp": "2025-12-05T17:04:39.410078"
+  },
+  "user4": {
+    "status": "online",
+    "message": "",
+    "timestamp": "2025-12-05T17:04:42.762370"
+  }
+}
